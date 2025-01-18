@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticker Dashboard</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            color: white;
+            padding: 10px 15px;
+            font-size: 16px;
+            width: 200px;
+            border-radius: 4px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            max-width: calc(100% - 540px);
+            margin: 0;
+            margin-right: 520px;
+        }
+
+        .ticker-card {
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            padding: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .ticker-card:hover {
+            transform: translateY(-5px);
+            background-color: #333;
+        }
+
+        .ticker-name {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .ticker-details p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .posts-summary {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+
+        .posts-summary h4 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .posts-summary p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        /* Updated Popup styles */
+        .popup {
+            display: block;
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 500px;
+            height: 100vh;
+            background: #202020;
+            border-left: 1px solid #404040;
+            padding: 30px;
+            box-shadow: -2px 0 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .popup-close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+            color: #888;
+            font-size: 20px;
+        }
+
+        .popup-content {
+            margin-top: 20px;
+        }
+
+        .post {
+            border-bottom: 1px solid #404040;
+            padding: 10px 0;
+        }
+
+        .post-content {
+            margin-bottom: 8px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Optional: Add initial content for the panel */
+        .popup-content:empty::before {
+            content: 'Select a ticker to view details';
+            color: #888;
+            font-style: italic;
+        }
+
+        .metrics-section, .posts-section {
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 40px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2a2a2a;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .metric-label {
+            display: block;
+            color: #888;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            display: block;
+            color: white;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .small-metric {
+            margin-bottom: 15px;
+        }
+
+        .large-metric {
+            grid-column: span 1.5;
+            margin-top: 15px;
+        }
+
+        .large-metric .metric-label {
+            font-size: 24px;
+        }
+
+        .large-metric .metric-value {
+            font-size: 36px;
+            margin-top: 8px;
+        }
+
+        /* Adjust the container background to be slightly lighter */
+        .popup {
+            background-color: #202020;
+        }
+
+        /* Adjust metrics text spacing */
+        .metrics-section p {
+            margin: 12px 0;
+            line-height: 1.4;
+        }
+
+        /* Add significant space before posts */
+        .posts-section {
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2a2a2a;
+            min-height: 600px;
+        }
+
+        /* Optional: Add a visual separator */
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #404040;
+        }
+
+        .post {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .post-author {
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .post-content {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .post-meta {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .post-stats {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Update the title styling */
+        .popup h2 {
+            font-size: 38px;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .title-container h2 {
+            margin: 0;
+        }
+
+        .last-updated {
+            color: #ff4444;
+            font-size: 14px;
+            margin-left: -2px;
+        }
+
+        .header-section {
+            margin-bottom: 30px;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .title-container h2 {
+            margin: 0;
+        }
+
+        .last-updated {
+            color: #ff4444;
+            font-size: 14px;
+        }
+
+        .contract-address {
+            color: #888;
+            font-size: 14px;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+
+        .difference-indicator {
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .metric-value {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .replay-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            color: #888;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .replay-button:hover {
+            background-color: #333;
+        }
+
+        /* Update existing animation class */
+        .difference-indicator {
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        /* Optional: Add some spacing between the sections */
+        .metrics-section {
+            margin-bottom: 30px;
+        }
+
+        .engagement-header {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+            color: #888;
+        }
+
+        .engagement-metric {
+            text-align: left;
+            padding: 0;
+            background: none;
+        }
+
+        .engagement-metric .metric-label {
+            font-size: 14px;
+            color: #888;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .engagement-metric .metric-value {
+            font-size: 24px;
+            color: #fff;
+            font-weight: normal;
+        }
+
+        .top-post {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .top-post h3 {
+            color: #888;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .posts-container {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-top: 30px;
+        }
+
+        .post {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .post.highlight {
+            border: 1px solid #404040;
+            background: #2d2d2d;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .handle {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .post-time {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .post-content {
+            margin: 8px 0;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 12px;
+            color: #888;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .post-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Custom scrollbar styling */
+        .posts-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .posts-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .posts-container::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 4px;
+        }
+
+        .date-section {
+            margin-bottom: 40px;
+        }
+        
+        .date-header {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #2a2a2a;
+            border-radius: 4px;
+        }
+        
+        .grid-container {
+            margin-bottom: 30px;
+        }
+
+        .error-message {
+            color: #ff4444;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 5px;
+            margin: 10px;
+            font-family: monospace;
+        }
+
+        .ticker-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            color: white;
+            min-width: 250px;
+        }
+        
+        .ticker-card h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        
+        .ticker-card h4 {
+            color: #2196F3;
+            margin: 15px 0 10px 0;
+        }
+        
+        .ticker-details p {
+            margin: 5px 0;
+        }
+        
+        .posts-summary {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .error-message {
+            color: #ff4444;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 5px;
+            margin: 10px;
+            font-family: monospace;
+        }
+        
+        #tickerGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+
+        .grid-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .details-panel {
+            width: 400px;
+            background: #202020;
+            border-left: 1px solid #333;
+            padding: 30px;
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .ticker-card {
+            background: #1e1e1e;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 1px solid #333;
+            transition: background-color 0.2s;
+        }
+
+        .ticker-card:hover {
+            background: #252525;
+        }
+
+        .ticker-card h3 {
+            color: #4CAF50;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .ticker-details p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .search-container {
+            padding: 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+        }
+
+        .search-input {
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 200px;
+        }
+
+        .popup-content {
+            color: #888;
+            font-style: italic;
+        }
+
+        /* Metrics styling in details panel */
+        .metrics-section {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .metric-label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .metric-value {
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Search Bar -->
+    <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search ticker...">
+    </div>
+
+    <!-- Main container for grid and details panel -->
+    <div class="main-container">
+        <!-- Ticker Grid -->
+        <div class="grid-container" id="tickerGrid">
+            <!-- Ticker cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Details Panel -->
+        <div class="details-panel">
+            <div class="popup-content">
+                Select a ticker to view details
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add this at the top level of your JavaScript
+        let allCsvData = new Map(); // Store data from all CSV files
+        let csvData = '';  // Global variable to store CSV data
+        let previousMetrics = null;  // Global variable for metrics comparison
+
+        async function findAllCSVFiles() {
+            try {
+                // Get list of files in directory
+                const response = await fetch('.');
+                const text = await response.text();
+                
+                // Parse HTML to find links
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const links = Array.from(doc.getElementsByTagName('a'));
+                
+                // Filter for our CSV pattern
+                const csvFiles = links
+                    .map(link => link.href)
+                    .filter(href => href.match(/multi_x_posts_\d{8}_\d{6}_merged\.csv$/))
+                    .map(href => href.split('/').pop());
+                
+                console.log('Found CSV files:', csvFiles);
+                return csvFiles;
+            } catch (error) {
+                console.error('Error finding CSV files:', error);
+                return [];
+            }
+        }
+
+        async function loadAndStackCSV(filename) {
+            try {
+                console.log('Attempting to load CSV:', filename);
+                const response = await fetch(filename);
+                
+                if (!response.ok) {
+                    console.error(`Failed to load CSV: ${filename}`);
+                    console.error('Status:', response.status);
+                    console.error('Status Text:', response.statusText);
+                    return false;
+                }
+                
+                const data = await response.text();
+                console.log(`Successfully loaded ${filename}`);
+                
+                // Store the CSV data
+                allCsvData.set(filename, data);
+                
+                return true;
+            } catch (error) {
+                console.error(`Error loading CSV ${filename}:`, error);
+                return false;
+            }
+        }
+
+        // Function to merge all CSV data
+        function getMergedData() {
+            let headers = null;
+            let allRows = new Set(); // Use Set to avoid duplicates
+            
+            // Process each CSV file
+            for (let [filename, csvContent] of allCsvData) {
+                const lines = csvContent.split('\n');
+                
+                // Handle headers from first file
+                if (!headers) {
+                    headers = lines[0];
+                }
+                
+                // Add data rows (skip header)
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim()) {
+                        allRows.add(lines[i]);
+                    }
+                }
+            }
+            
+            // Convert back to array and join with newlines
+            const mergedRows = Array.from(allRows);
+            return [headers, ...mergedRows].join('\n');
+        }
+
+        async function initializeData() {
+            console.log('Starting initialization...');
+            
+            try {
+                // Find most recent bullx_tickers file
+                console.log('Searching for BullX ticker files...');
+                const response = await fetch('.');
+                const text = await response.text();
+                
+                // Parse HTML to find links
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const links = Array.from(doc.getElementsByTagName('a'));
+                
+                // Filter for our CSV files
+                const bullxFiles = links
+                    .map(link => link.href)
+                    .filter(href => href.includes('bullx_tickers_'))
+                    .map(href => href.split('/').pop());
+
+                console.log('Found BullX files:', bullxFiles);
+                
+                if (bullxFiles.length === 0) {
+                    document.getElementById('tickerGrid').innerHTML = 
+                        '<div class="error-message">No BullX ticker data available</div>';
+                    return;
+                }
+                
+                // Get most recent file
+                const latestBullxFile = bullxFiles[bullxFiles.length - 1];
+                console.log('Loading BullX file:', latestBullxFile);
+                
+                // Load BullX data
+                const response2 = await fetch(latestBullxFile);
+                const csvText = await response2.text();
+                const rows = csvText.split('\n').filter(row => row.trim());
+                
+                // Process the data
+                const grid = document.getElementById('tickerGrid');
+                grid.innerHTML = '';
+                
+                // Skip header row and process each data row
+                for (let i = 1; i < rows.length; i++) {
+                    const columns = rows[i].split(',');
+                    if (columns.length >= 11) { // Make sure we have enough columns
+                        const card = document.createElement('div');
+                        card.className = 'ticker-card';
+                        card.innerHTML = `
+                            <div class="ticker-name">${columns[0]}</div>
+                        `;
+                        
+                        card.addEventListener('click', () => showPopup(columns[0]));
+                        grid.appendChild(card);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error initializing data:', error);
+                document.getElementById('tickerGrid').innerHTML = 
+                    `<div class="error-message">Error loading data: ${error.message}</div>`;
+            }
+        }
+
+        async function findFiles(pattern) {
+            try {
+                console.log('Fetching files with pattern:', pattern);
+                const response = await fetch('/list-files?' + new URLSearchParams({ pattern }));
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const files = await response.json();
+                console.log('Server returned files:', files);
+                return files.sort();
+            } catch (error) {
+                console.error('Error finding files:', error);
+                throw error;
+            }
+        }
+
+        async function loadCSV(filename) {
+            try {
+                console.log('Fetching CSV file:', filename);
+                const response = await fetch(filename);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const text = await response.text();
+                console.log('CSV content:', text.substring(0, 200) + '...'); // Show first 200 chars
+                return parseCSV(text);
+            } catch (error) {
+                console.error('Error loading CSV:', error);
+                throw error;
+            }
+        }
+
+        function displayTickerData(bullxData, xPostsData) {
+            console.log('Displaying data:', { bullxData, xPostsData });
+            const container = document.getElementById('tickerGrid');
+            container.innerHTML = '';
+            
+            if (!bullxData || bullxData.length === 0) {
+                container.innerHTML = '<div class="error-message">No ticker data available</div>';
+                return;
+            }
+            
+            bullxData.forEach(ticker => {
+                console.log('Creating card for ticker:', ticker);
+                const card = createTickerCard(ticker, xPostsData);
+                container.appendChild(card);
+            });
+        }
+
+        function createTickerCard(ticker, xPostsData) {
+            const card = document.createElement('div');
+            card.className = 'ticker-card';
+            
+            // Get X posts for this ticker if available
+            const tickerPosts = xPostsData ? 
+                xPostsData.filter(post => post.ticker.toUpperCase() === ticker.Ticker.toUpperCase()) : [];
+            
+            // Create card content with ticker name in green
+            card.innerHTML = `
+                <h3 style="color: #4CAF50">${ticker.Ticker}</h3>
+                <div class="ticker-details">
+                    <p>Market Cap: ${ticker.Market_Cap || '$0'}</p>
+                    <p>Volume: ${ticker.Volume || '$0'}</p>
+                    <p>Holders: ${ticker.Total_Holders || '0'}</p>
+                    <p>Real Traders: ${ticker.Real_Traders || '0'}</p>
+                    <p>Insider %: ${ticker.Insider_Percentage || '0%'}</p>
+                    <p>Dev Status: ${ticker.Dev_Status || '0%'}</p>
+                </div>
+                ${tickerPosts.length > 0 ? `
+                    <div class="posts-summary">
+                        <h4 style="color: #2196F3">Social Activity</h4>
+                        <p>Recent Posts: ${tickerPosts.length}</p>
+                        <p>Total Likes: ${sumMetric(tickerPosts, 'likes')}</p>
+                        <p>Total Views: ${sumMetric(tickerPosts, 'views')}</p>
+                    </div>
+                ` : ''}
+            `;
+            
+            card.addEventListener('click', () => showTickerDetails(ticker));
+            return card;
+        }
+
+        function sumMetric(posts, metric) {
+            return posts.reduce((sum, post) => sum + (parseInt(post[metric]) || 0), 0);
+        }
+
+        // Add function to manually refresh data
+        function refreshData() {
+            initializeData();
+        }
+
+        // Add a refresh button to the UI
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchContainer = document.querySelector('.search-container');
+            const refreshButton = document.createElement('button');
+            refreshButton.innerHTML = '↻ Refresh';
+            refreshButton.style.cssText = `
+                background-color: #2a2a2a;
+                border: 1px solid #404040;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-left: 10px;
+            `;
+            refreshButton.onclick = refreshData;
+            searchContainer.appendChild(refreshButton);
+            
+            // Initial load
+            initializeData();
+        });
+
+        // Optional: Add function to add new CSV files dynamically
+        async function addNewCSVFile(filename) {
+            if (await loadAndStackCSV(filename)) {
+                // Refresh the display with merged data
+                const mergedData = getMergedData();
+                csvData = mergedData;
+                
+                const tickers = parseCSV(mergedData);
+                const grid = document.getElementById('tickerGrid');
+                grid.innerHTML = '';
+                
+                tickers.forEach(ticker => {
+                    const card = createTickerCard(ticker);
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        function calculateDifference(current, previous) {
+            if (!previous) return null;
+            const diff = current - previous;
+            return {
+                value: diff,
+                isPositive: diff > 0,
+                isZero: diff === 0
+            };
+        }
+
+        function getDifferenceHTML(diff) {
+            if (!diff) return '';
+            const color = diff.isZero ? '#888' : (diff.isPositive ? '#4CAF50' : '#FF5252');
+            const sign = diff.isPositive ? '+' : '';
+            return `<span class="difference-indicator" style="color: ${color}">${sign}${diff.value}</span>`;
+        }
+
+        // Function to parse CSV data
+        function getUniqueTickers(csv) {
+            // First pass: collect all potential tickers and their frequencies
+            const tickerCounts = new Map();
+            
+            const lines = csv.split('\n');
+            for (let i = 1; i < lines.length; i++) {  // Skip header
+                const parts = lines[i].split(',');
+                if (parts.length > 0) {
+                    const ticker = parts[0].trim().toUpperCase(); // Normalize to uppercase
+                    if (ticker && !ticker.startsWith('@') && !ticker.startsWith('.')) {
+                        tickerCounts.set(ticker, (tickerCounts.get(ticker) || 0) + 1);
+                    }
+                }
+            }
+            
+            // Filter out likely non-tickers
+            const validTickers = new Set(
+                Array.from(tickerCounts.entries())
+                    .filter(([ticker, count]) => {
+                        return count >= 2 && // Appears at least twice
+                               ticker.length <= 5 && // Most tickers are 1-5 characters
+                               !/[a-z]/.test(ticker) && // No lowercase letters
+                               !/\s/.test(ticker); // No whitespace
+                    })
+                    .map(([ticker]) => ticker)
+            );
+            
+            console.log("Valid tickers found:", Array.from(validTickers));
+            return validTickers;
+        }
+
+        function parseCSV(text) {
+            console.log('Parsing CSV text:', text.substring(0, 200));
+            
+            // Split into lines and remove empty lines
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) {
+                console.error('CSV file has insufficient data');
+                return [];
+            }
+            
+            // Get headers
+            const headers = lines[0].split(',').map(h => h.trim());
+            console.log('CSV headers:', headers);
+            
+            // Parse data rows
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                if (values.length === headers.length) {
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index].trim();
+                    });
+                    data.push(row);
+                }
+            }
+            
+            console.log(`Parsed ${data.length} rows of data`);
+            return data;
+        }
+
+        // Search functionality
+        document.querySelector('.search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.ticker-card').forEach(card => {
+                const ticker = card.querySelector('.ticker-name').textContent.toLowerCase();
+                card.style.display = ticker.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+
+        // Add this function to handle replay
+        function replayDifferences() {
+            const indicators = document.querySelectorAll('.difference-indicator');
+            indicators.forEach(indicator => {
+                indicator.style.animation = 'none';
+                indicator.offsetHeight; // Trigger reflow
+                indicator.style.animation = 'fadeInOut 2s ease-in-out forwards';
+            });
+        }
+
+        // Add some styling for error messages
+        const style = document.createElement('style');
+        style.textContent = `
+            .error-message {
+                color: #ff4444;
+                padding: 20px;
+                background: #1a1a1a;
+                border-radius: 5px;
+                margin: 10px;
+                font-family: monospace;
+            }
+        `;
+        document.head.appendChild(style);
+
+        function showTickerDetails(ticker) {
+            const detailsPanel = document.querySelector('.popup-content');
+            detailsPanel.innerHTML = `
+                <h2>${ticker.Ticker}</h2>
+                <div class="metrics-section">
+                    <div class="metric-row">
+                        <span class="metric-label">Market Cap</span>
+                        <span class="metric-value">${ticker.Market_Cap}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Volume</span>
+                        <span class="metric-value">${ticker.Volume}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Holders</span>
+                        <span class="metric-value">${ticker.Total_Holders}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Real Traders</span>
+                        <span class="metric-value">${ticker.Real_Traders}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Insider %</span>
+                        <span class="metric-value">${ticker.Insider_Percentage}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Dev Status</span>
+                        <span class="metric-value">${ticker.Dev_Status}</span>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 

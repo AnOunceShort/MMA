@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticker Dashboard</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            color: white;
+            padding: 10px 15px;
+            font-size: 16px;
+            width: 200px;
+            border-radius: 4px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            max-width: calc(100% - 540px);
+            margin: 0;
+            margin-right: 520px;
+        }
+
+        .ticker-card {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .ticker-card:hover {
+            transform: translateY(-5px);
+            background-color: #333;
+        }
+
+        .ticker-name {
+            font-size: 16px;
+            color: #fff;
+        }
+
+        /* Updated Popup styles */
+        .popup {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 100vh;
+            background: #202020;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .popup-close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+            color: #888;
+            font-size: 20px;
+        }
+
+        .popup-content {
+            padding: 20px;
+        }
+
+        .post {
+            border-bottom: 1px solid #404040;
+            padding: 10px 0;
+        }
+
+        .post-content {
+            margin-bottom: 8px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Optional: Add initial content for the panel */
+        .popup-content:empty::before {
+            content: 'Select a ticker to view details';
+            color: #888;
+            font-style: italic;
+        }
+
+        .metrics-section, .posts-section {
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 40px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2a2a2a;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .metric-label {
+            display: block;
+            color: #888;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            display: block;
+            color: white;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .small-metric {
+            margin-bottom: 15px;
+        }
+
+        .large-metric {
+            grid-column: span 1.5;
+            margin-top: 15px;
+        }
+
+        .large-metric .metric-label {
+            font-size: 24px;
+        }
+
+        .large-metric .metric-value {
+            font-size: 36px;
+            margin-top: 8px;
+        }
+
+        /* Adjust the container background to be slightly lighter */
+        .popup {
+            background-color: #202020;
+        }
+
+        /* Adjust metrics text spacing */
+        .metrics-section p {
+            margin: 12px 0;
+            line-height: 1.4;
+        }
+
+        /* Add significant space before posts */
+        .posts-section {
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2a2a2a;
+            min-height: 600px;
+        }
+
+        /* Optional: Add a visual separator */
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #404040;
+        }
+
+        .post {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .post-author {
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .post-content {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .post-meta {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .post-stats {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Update the title styling */
+        .popup h2 {
+            font-size: 38px;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .title-container h2 {
+            margin: 0;
+        }
+
+        .last-updated {
+            color: #ff4444;
+            font-size: 14px;
+            margin-left: -2px;
+        }
+
+        .header-section {
+            margin-bottom: 30px;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .title-container h2 {
+            margin: 0;
+        }
+
+        .last-updated {
+            color: #ff4444;
+            font-size: 14px;
+        }
+
+        .contract-address {
+            color: #888;
+            font-size: 14px;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+
+        .difference-indicator {
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .metric-value {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .replay-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            color: #888;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .replay-button:hover {
+            background-color: #333;
+        }
+
+        /* Update existing animation class */
+        .difference-indicator {
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        /* Optional: Add some spacing between the sections */
+        .metrics-section {
+            margin-bottom: 30px;
+        }
+
+        .engagement-header {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+            color: #888;
+        }
+
+        .engagement-metric {
+            text-align: left;
+            padding: 0;
+            background: none;
+        }
+
+        .engagement-metric .metric-label {
+            font-size: 14px;
+            color: #888;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .engagement-metric .metric-value {
+            font-size: 24px;
+            color: #fff;
+            font-weight: normal;
+        }
+
+        .top-post {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .top-post h3 {
+            color: #888;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .posts-container {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-top: 30px;
+        }
+
+        .post {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .post.highlight {
+            border: 1px solid #404040;
+            background: #2d2d2d;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .handle {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .post-time {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .post-content {
+            margin: 8px 0;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 12px;
+            color: #888;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .post-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Custom scrollbar styling */
+        .posts-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .posts-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .posts-container::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 4px;
+        }
+
+        .posts-section {
+            margin-top: 30px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .posts-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .post {
+            background: #2a2a2a;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .post-header {
+            margin-bottom: 10px;
+        }
+
+        .post-author {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .post-handle {
+            color: #888;
+        }
+
+        .post-content {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .post-meta {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .post-meta span {
+            margin-right: 15px;
+        }
+
+        .ticker-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .ticker-address {
+            color: #888;
+            font-size: 14px;
+            font-family: monospace;
+            margin-top: 2px;
+            margin-bottom: 25px;
+        }
+
+        .header-section {
+            margin-bottom: 30px;
+        }
+
+        .ticker-title {
+            font-size: 32px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .ticker-address {
+            color: #888;
+            font-size: 14px;
+            font-family: monospace;
+            margin-top: 2px;
+            margin-bottom: 25px;
+        }
+
+        .metrics-section {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 25px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .metric-item {
+            text-align: left;
+        }
+
+        .metric-item.large {
+            grid-column: span 2;
+        }
+
+        .metric-label {
+            color: #888;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .metric-spacer {
+            grid-column: span 3;
+            height: 20px;
+        }
+
+        .top-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .file-info {
+            color: #888;
+            font-size: 14px;
+            background: #2a2a2a;
+            padding: 8px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .ticker-card {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .ticker-card:hover {
+            background: #3a3a3a;
+        }
+    </style>
+</head>
+<body>
+    <!-- Replace the existing search container with this -->
+    <div class="top-container">
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search ticker...">
+            <button class="refresh-button">↻ Refresh</button>
+        </div>
+        <div class="file-info">
+            Current file: <span id="currentFile">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Ticker Grid -->
+    <div class="grid-container" id="tickerGrid">
+        <!-- Ticker cards will be dynamically inserted here -->
+    </div>
+
+    <!-- Popup Template -->
+    <div class="popup" id="tickerPopup">
+        <div id="popupContent" class="popup-content"></div>
+    </div>
+
+    <script>
+        console.log('Basic script test');  // This should show up immediately
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded');  // This should show up when DOM is ready
+            
+            // Test if we can fetch files
+            fetch('http://localhost:8081/list_files')
+                .then(response => response.json())
+                .then(files => {
+                    console.log('Files found:', files);
+                    initializeData();
+                })
+                .catch(error => console.error('Fetch error:', error));
+        });
+
+        async function initializeData() {
+            try {
+                const response = await fetch('http://localhost:8081/list_files');
+                const files = await response.json();
+                console.log('Files available:', files);
+
+                const bullxFiles = files.filter(f => f.startsWith('bullx_tickers_'));
+                if (bullxFiles.length === 0) {
+                    throw new Error('No BullX files found');
+                }
+
+                const latestFile = bullxFiles[bullxFiles.length - 1];
+                document.getElementById('currentFile').textContent = latestFile;
+
+                // Load the CSV data
+                const dataResponse = await fetch(`http://localhost:8081/${latestFile}`);
+                const csvText = await dataResponse.text();
+                
+                // Parse and display the data
+                const rows = csvText.split('\n').filter(row => row.trim());
+                const grid = document.getElementById('tickerGrid');
+                grid.innerHTML = '';
+
+                for (let i = 1; i < rows.length; i++) {
+                    const columns = rows[i].split(',');
+                    if (columns.length >= 1) {
+                        const card = document.createElement('div');
+                        card.className = 'ticker-card';
+                        card.innerHTML = `
+                            <div class="ticker-info">
+                                <span class="ticker-name">${columns[0]}</span>
+                            </div>`;
+                        card.addEventListener('click', () => showPopup(columns[0]));
+                        grid.appendChild(card);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('tickerGrid').innerHTML = 
+                    `<div class="error-message">Error loading data: ${error.message}</div>`;
+                document.getElementById('currentFile').textContent = 'Error loading file';
+            }
+        }
+
+        async function showPopup(ticker) {
+            console.log('Showing popup for ticker:', ticker);  // Debug log
+            const popup = document.getElementById('tickerPopup');
+            const content = document.getElementById('popupContent');
+            
+            try {
+                // Get the CSV data for this ticker
+                const response = await fetch('http://localhost:8081/list_files');
+                const files = await response.json();
+                
+                // Get metrics data
+                const bullxFiles = files.filter(f => f.startsWith('bullx_tickers_'));
+                const latestBullxFile = bullxFiles[bullxFiles.length - 1];
+                const metricsResponse = await fetch('http://localhost:8081/' + latestBullxFile);
+                const metricsText = await metricsResponse.text();
+                
+                // Find metrics for this ticker
+                const metricsRows = metricsText.split('\n').filter(row => row.trim());
+                const tickerRow = metricsRows.find(row => {
+                    const columns = row.split(',');
+                    return columns[0].trim().toLowerCase() === ticker.toLowerCase();
+                });
+
+                if (tickerRow) {
+                    const columns = tickerRow.split(',');
+                    const contentHTML = `
+                        <div class="header-section">
+                            <h2 class="ticker-title">${ticker}</h2>
+                            <div class="ticker-address">${columns[10] || ''}</div>
+                        </div>
+                        <div class="metrics-section">
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <div class="metric-label">Real Traders</div>
+                                    <div class="metric-value">${columns[2] || '0'}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Sniper Count</div>
+                                    <div class="metric-value">${columns[8] || '0'}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Holders</div>
+                                    <div class="metric-value">${columns[3] || '0'}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Insider %</div>
+                                    <div class="metric-value">${columns[5].replace('%', '')}%</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Top 10 Holding</div>
+                                    <div class="metric-value">${columns[7].replace('%', '')}%</div>
+                                </div>
+                                <div class="metric-spacer"></div>
+                                <div class="metric-item large">
+                                    <div class="metric-label">Market Cap</div>
+                                    <div class="metric-value">${columns[1].startsWith('$') ? columns[1] : '$' + columns[1]}</div>
+                                </div>
+                                <div class="metric-item large">
+                                    <div class="metric-label">Volume</div>
+                                    <div class="metric-value">${columns[4] || '0'}</div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    content.innerHTML = contentHTML;
+                    popup.style.display = 'block';  // Make sure popup is visible
+                }
+
+            } catch (error) {
+                console.error('Error showing popup:', error);
+                content.innerHTML = `<h2>${ticker}</h2><p>Error loading data: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+import re
+
+# Load the text file
+with open("scraped_data.txt", "r") as file:
+    data = file.read()
+
+# Define the ticker to search for (replace 'TICKER' with the desired ticker name)
+ticker_to_find = input("Enter the ticker name to search for: ")
+
+# Find all occurrences of the ticker (case-insensitive)
+matches = re.findall(rf'\b{ticker_to_find}\b', data, re.IGNORECASE)
+
+# Count the occurrences
+count = len(matches)
+
+# Display the result
+print(f"The ticker '{ticker_to_find}' was mentioned {count} times.")
+

@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticker Dashboard</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            color: white;
+            padding: 10px 15px;
+            font-size: 16px;
+            width: 200px;
+            border-radius: 4px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            max-width: calc(100% - 540px);
+            margin: 0;
+            margin-right: 520px;
+        }
+
+        .ticker-card {
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            padding: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .ticker-card:hover {
+            transform: translateY(-5px);
+            background-color: #333;
+        }
+
+        .ticker-name {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Updated Popup styles */
+        .popup {
+            display: block;
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 500px;
+            height: 100vh;
+            background: #202020;
+            border-left: 1px solid #404040;
+            padding: 30px;
+            box-shadow: -2px 0 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .popup-close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+            color: #888;
+            font-size: 20px;
+        }
+
+        .popup-content {
+            margin-top: 20px;
+        }
+
+        .post {
+            border-bottom: 1px solid #404040;
+            padding: 10px 0;
+        }
+
+        .post-content {
+            margin-bottom: 8px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Optional: Add initial content for the panel */
+        .popup-content:empty::before {
+            content: 'Select a ticker to view details';
+            color: #888;
+            font-style: italic;
+        }
+
+        .metrics-section, .posts-section {
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 40px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2a2a2a;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .metric-label {
+            display: block;
+            color: #888;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            display: block;
+            color: white;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .small-metric {
+            margin-bottom: 15px;
+        }
+
+        .large-metric {
+            grid-column: span 1.5;
+            margin-top: 15px;
+        }
+
+        .large-metric .metric-label {
+            font-size: 24px;
+        }
+
+        .large-metric .metric-value {
+            font-size: 36px;
+            margin-top: 8px;
+        }
+
+        /* Adjust the container background to be slightly lighter */
+        .popup {
+            background-color: #202020;
+        }
+
+        /* Adjust metrics text spacing */
+        .metrics-section p {
+            margin: 12px 0;
+            line-height: 1.4;
+        }
+
+        /* Add significant space before posts */
+        .posts-section {
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2a2a2a;
+            min-height: 600px;
+        }
+
+        /* Optional: Add a visual separator */
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #404040;
+        }
+
+        .post {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .post-author {
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .post-content {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .post-meta {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .post-stats {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Update the title styling */
+        .popup h2 {
+            font-size: 38px;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .title-container h2 {
+            margin: 0;
+        }
+
+        .last-updated {
+            color: #ff4444;
+            font-size: 14px;
+            margin-left: -2px;
+        }
+
+        .header-section {
+            margin-bottom: 30px;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .title-container h2 {
+            margin: 0;
+        }
+
+        .last-updated {
+            color: #ff4444;
+            font-size: 14px;
+        }
+
+        .contract-address {
+            color: #888;
+            font-size: 14px;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+
+        .difference-indicator {
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .metric-value {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .replay-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            border: 1px solid #404040;
+            color: #888;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .replay-button:hover {
+            background-color: #333;
+        }
+
+        /* Update existing animation class */
+        .difference-indicator {
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        /* Optional: Add some spacing between the sections */
+        .metrics-section {
+            margin-bottom: 30px;
+        }
+
+        .engagement-header {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+            color: #888;
+        }
+
+        .engagement-metric {
+            text-align: left;
+            padding: 0;
+            background: none;
+        }
+
+        .engagement-metric .metric-label {
+            font-size: 14px;
+            color: #888;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .engagement-metric .metric-value {
+            font-size: 24px;
+            color: #fff;
+            font-weight: normal;
+        }
+
+        .top-post {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .top-post h3 {
+            color: #888;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .posts-container {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-top: 30px;
+        }
+
+        .post {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .post.highlight {
+            border: 1px solid #404040;
+            background: #2d2d2d;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .handle {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .post-time {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .post-content {
+            margin: 8px 0;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 12px;
+            color: #888;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .post-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Custom scrollbar styling */
+        .posts-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .posts-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .posts-container::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Search Bar -->
+    <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search ticker...">
+    </div>
+
+    <!-- Ticker Grid -->
+    <div class="grid-container" id="tickerGrid">
+        <!-- Ticker cards will be dynamically inserted here -->
+    </div>
+
+    <!-- Popup Template -->
+    <div class="popup" id="tickerPopup">
+        <div id="popupContent" class="popup-content"></div>
+    </div>
+
+    <script>
+        // Add this at the top level of your JavaScript
+        let allCsvData = new Map(); // Store data from all CSV files
+
+        async function loadAndStackCSV(filename) {
+            try {
+                const response = await fetch(filename);
+                const data = await response.text();
+                
+                // Store the new CSV data with timestamp as key
+                allCsvData.set(filename, data);
+                
+                console.log(`Loaded CSV: ${filename}`);
+                return true;
+            } catch (error) {
+                console.error(`Error loading CSV ${filename}:`, error);
+                return false;
+            }
+        }
+
+        // Function to merge all CSV data
+        function getMergedData() {
+            let headers = null;
+            let mergedRows = [];
+
+            // Process each CSV file
+            for (let [filename, csvContent] of allCsvData) {
+                const lines = csvContent.split('\n');
+                
+                // Handle headers from first file
+                if (!headers) {
+                    headers = lines[0];
+                    mergedRows.push(headers);
+                }
+                
+                // Add data rows (skip header)
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim()) {
+                        mergedRows.push(lines[i]);
+                    }
+                }
+            }
+
+            return mergedRows.join('\n');
+        }
+
+        // Update the initialization to load single CSV file
+        async function initializeData() {
+            const csvFiles = [
+                'multi_x_posts_20250115_090613_merged.csv'
+            ];
+
+            // Load CSV file
+            for (const file of csvFiles) {
+                await loadAndStackCSV(file);
+            }
+
+            // Use merged data to update the display
+            const mergedData = getMergedData();
+            csvData = mergedData; // Update the global csvData variable
+            
+            // Parse tickers and update the grid
+            const tickers = parseCSV(mergedData);
+            const grid = document.getElementById('tickerGrid');
+            grid.innerHTML = ''; // Clear existing content
+            
+            tickers.forEach(ticker => {
+                const card = createTickerCard(ticker);
+                grid.appendChild(card);
+            });
+        }
+
+        // Update the document load event
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeData();
+        });
+
+        // Optional: Add function to add new CSV files dynamically
+        async function addNewCSVFile(filename) {
+            if (await loadAndStackCSV(filename)) {
+                // Refresh the display with merged data
+                const mergedData = getMergedData();
+                csvData = mergedData;
+                
+                const tickers = parseCSV(mergedData);
+                const grid = document.getElementById('tickerGrid');
+                grid.innerHTML = '';
+                
+                tickers.forEach(ticker => {
+                    const card = createTickerCard(ticker);
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        function calculateDifference(current, previous) {
+            if (!previous) return null;
+            const diff = current - previous;
+            return {
+                value: diff,
+                isPositive: diff > 0,
+                isZero: diff === 0
+            };
+        }
+
+        function getDifferenceHTML(diff) {
+            if (!diff) return '';
+            const color = diff.isZero ? '#888' : (diff.isPositive ? '#4CAF50' : '#FF5252');
+            const sign = diff.isPositive ? '+' : '';
+            return `<span class="difference-indicator" style="color: ${color}">${sign}${diff.value}</span>`;
+        }
+
+        // Function to parse CSV data
+        function getUniqueTickers(csv) {
+            // First pass: collect all potential tickers and their frequencies
+            const tickerCounts = new Map();
+            
+            const lines = csv.split('\n');
+            for (let i = 1; i < lines.length; i++) {  // Skip header
+                const parts = lines[i].split(',');
+                if (parts.length > 0) {
+                    const ticker = parts[0].trim().toUpperCase(); // Normalize to uppercase
+                    if (ticker && !ticker.startsWith('@') && !ticker.startsWith('.')) {
+                        tickerCounts.set(ticker, (tickerCounts.get(ticker) || 0) + 1);
+                    }
+                }
+            }
+            
+            // Filter out likely non-tickers
+            const validTickers = new Set(
+                Array.from(tickerCounts.entries())
+                    .filter(([ticker, count]) => {
+                        return count >= 2 && // Appears at least twice
+                               ticker.length <= 5 && // Most tickers are 1-5 characters
+                               !/[a-z]/.test(ticker) && // No lowercase letters
+                               !/\s/.test(ticker); // No whitespace
+                    })
+                    .map(([ticker]) => ticker)
+            );
+            
+            console.log("Valid tickers found:", Array.from(validTickers));
+            return validTickers;
+        }
+
+        function parseCSV(csv) {
+            const validTickers = getUniqueTickers(csv);
+            
+            // Now use these valid tickers to create the display set
+            const displayTickers = new Set();
+            
+            const lines = csv.split('\n');
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length > 0) {
+                    const ticker = parts[0].trim().toUpperCase();
+                    if (validTickers.has(ticker)) {
+                        displayTickers.add(ticker);
+                    }
+                }
+            }
+            
+            return Array.from(displayTickers);
+        }
+
+        // Simplify the card creation to only show ticker names
+        function createTickerCard(ticker) {
+            const card = document.createElement('div');
+            card.className = 'ticker-card';
+            card.onclick = () => {
+                console.log('Ticker clicked:', ticker); // Debug log
+                showPopup(ticker);
+            };
+            
+            const tickerName = document.createElement('div');
+            tickerName.className = 'ticker-name';
+            tickerName.textContent = ticker;
+            
+            card.appendChild(tickerName);
+            return card;
+        }
+
+        function parseCSVRow(text) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                
+                if (char === '"') {
+                    if (text[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function showPopup(ticker) {
+            const popup = document.getElementById('tickerPopup');
+            const content = document.getElementById('popupContent');
+            
+            // First, properly reconstruct the CSV rows
+            let rows = [];
+            let currentRow = '';
+            let inQuotes = false;
+            
+            csvData.split('\n').forEach(line => {
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    }
+                    currentRow += char;
+                }
+                
+                if (!inQuotes) {
+                    if (currentRow.trim()) {
+                        rows.push(currentRow.trim());
+                    }
+                    currentRow = '';
+                } else {
+                    currentRow += '\n';
+                }
+            });
+            
+            // Find all rows for this ticker
+            const tickerRows = rows.filter(row => {
+                const match = row.match(/^([^,]+)/);
+                return match && match[1].replace(/"/g, '').trim().toUpperCase() === ticker.toUpperCase();
+            });
+            
+            if (tickerRows.length > 0) {
+                // Calculate total engagement across all posts for this ticker
+                let totalEngagement = {
+                    likes: 0,
+                    views: 0,
+                    comments: 0
+                };
+
+                // Sum up engagement from all rows for this ticker
+                tickerRows.forEach(row => {
+                    const rowColumns = parseCSVRow(row);
+                    totalEngagement.likes += parseInt(rowColumns[6]) || 0;
+                    totalEngagement.views += parseInt(rowColumns[7]) || 0;
+                    totalEngagement.comments += parseInt(rowColumns[5]) || 0;
+                });
+
+                // Find the most engaged post (based on total engagement)
+                let mostEngagedPost = tickerRows[0];
+                let maxEngagement = 0;
+                
+                tickerRows.forEach(row => {
+                    const cols = parseCSVRow(row);
+                    const engagement = (parseInt(cols[5]) || 0) + (parseInt(cols[6]) || 0) + (parseInt(cols[7]) || 0);
+                    if (engagement > maxEngagement) {
+                        maxEngagement = engagement;
+                        mostEngagedPost = row;
+                    }
+                });
+
+                const mostEngagedColumns = parseCSVRow(mostEngagedPost);
+
+                // Generate HTML for all posts
+                const postsHTML = tickerRows.map(row => {
+                    const cols = parseCSVRow(row);
+                    return `
+                        <div class="post">
+                            <div class="post-header">
+                                <span class="username">${cols[2] || 'username'}</span>
+                                <span class="handle">${cols[1] || 'handle'}</span>
+                                <span class="post-time">${cols[4] || 'time'}</span>
+                            </div>
+                            <div class="post-content">${cols[3] || 'message'}</div>
+                            <div class="post-stats">
+                                <span>💬 ${cols[5] || '0'}</span>
+                                <span>🔄 ${cols[6] || '0'}</span>
+                                <span>❤️ ${cols[6] || '0'}</span>
+                                <span>👁️ ${cols[7] || '0'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                content.innerHTML = `
+                    <div class="header-section">
+                        <div class="title-container">
+                            <h2>${ticker}</h2>
+                            <span class="last-updated">${mostEngagedColumns[16] ? mostEngagedColumns[16].replace(/"/g, '') : 'N/A'}</span>
+                        </div>
+                        <div class="contract-address">${mostEngagedColumns[17] || 'N/A'}</div>
+                    </div>
+                    <div class="metrics-section">
+                        <div class="metrics-grid">
+                            <div class="small-metric">
+                                <span class="metric-label">Real Traders</span>
+                                <span class="metric-value">
+                                    ${mostEngagedColumns[9]}
+                                </span>
+                            </div>
+                            <div class="small-metric">
+                                <span class="metric-label">Sniper Count</span>
+                                <span class="metric-value">
+                                    ${mostEngagedColumns[15]}
+                                </span>
+                            </div>
+                            <div class="small-metric">
+                                <span class="metric-label">Total Holders</span>
+                                <span class="metric-value">
+                                    ${mostEngagedColumns[10]}
+                                </span>
+                            </div>
+                            <div class="small-metric">
+                                <span class="metric-label">Insider %</span>
+                                <span class="metric-value">
+                                    ${mostEngagedColumns[12]}
+                                </span>
+                            </div>
+                            <div class="small-metric">
+                                <span class="metric-label">Top 10 Holding</span>
+                                <span class="metric-value">
+                                    ${mostEngagedColumns[14]}
+                                </span>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                            <div class="large-metric">
+                                <span class="metric-label">Market Cap</span>
+                                <span class="metric-value">
+                                    ${mostEngagedColumns[8] || 'N/A'}
+                                </span>
+                            </div>
+                            <div class="large-metric">
+                                <span class="metric-label">Volume</span>
+                                <span class="metric-value">
+                                    ${mostEngagedColumns[11] || 'N/A'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="posts-section">
+                        <div class="metrics-grid">
+                            <div class="small-metric">
+                                <span class="metric-label">Likes</span>
+                                <span class="metric-value">${totalEngagement.likes.toLocaleString()}</span>
+                            </div>
+                            <div class="small-metric">
+                                <span class="metric-label">Views</span>
+                                <span class="metric-value">${totalEngagement.views.toLocaleString()}</span>
+                            </div>
+                            <div class="small-metric">
+                                <span class="metric-label">Comments</span>
+                                <span class="metric-value">${totalEngagement.comments.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div class="top-post">
+                            <h3>Most Engaged Post</h3>
+                            <div class="post highlight">
+                                <div class="post-header">
+                                    <span class="username">${mostEngagedColumns[2] || 'username'}</span>
+                                    <span class="handle">${mostEngagedColumns[1] || 'handle'}</span>
+                                    <span class="post-time">${mostEngagedColumns[4] || 'time'}</span>
+                                </div>
+                                <div class="post-content">${mostEngagedColumns[3] || 'message'}</div>
+                                <div class="post-stats">
+                                    <span>💬 ${mostEngagedColumns[5] || '0'}</span>
+                                    <span>🔁 ${mostEngagedColumns[6] || '0'}</span>
+                                    <span>❤️ ${mostEngagedColumns[6] || '0'}</span>
+                                    <span>👁️ ${mostEngagedColumns[7] || '0'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="posts-container">
+                            ${postsHTML}
+                        </div>
+                    </div>
+                    <button class="replay-button" onclick="replayDifferences()">
+                        ↺
+                    </button>
+                `;
+
+                // Store current metrics for next comparison
+                previousMetrics = {
+                    realTraders: parseInt(mostEngagedColumns[9]) || 0,
+                    sniperCount: parseFloat(mostEngagedColumns[15]) || 0,
+                    totalHolders: parseInt(mostEngagedColumns[10]) || 0,
+                    insiderPercentage: parseFloat(mostEngagedColumns[12].replace('%', '')) || 0,
+                    topHolding: parseFloat(mostEngagedColumns[14].replace('%', '')) || 0,
+                    marketCap: parseFloat(mostEngagedColumns[8].replace(/[^0-9.-]+/g, '')) || 0,
+                    volume: parseFloat(mostEngagedColumns[11].replace(/[^0-9.-]+/g, '')) || 0
+                };
+            } else {
+                content.innerHTML = `<h2>${ticker}</h2><p>No data found for ticker</p>`;
+            }
+        }
+
+        // Search functionality
+        document.querySelector('.search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.ticker-card').forEach(card => {
+                const ticker = card.querySelector('.ticker-name').textContent.toLowerCase();
+                card.style.display = ticker.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+
+        // Add this function to handle replay
+        function replayDifferences() {
+            const indicators = document.querySelectorAll('.difference-indicator');
+            indicators.forEach(indicator => {
+                indicator.style.animation = 'none';
+                indicator.offsetHeight; // Trigger reflow
+                indicator.style.animation = 'fadeInOut 2s ease-in-out forwards';
+            });
+        }
+    </script>
+</body>
+</html> 
